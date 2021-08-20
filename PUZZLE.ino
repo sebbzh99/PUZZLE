@@ -1,23 +1,26 @@
-const int Hall1 = 10; //ok physical
-const int Hall2 = 11; //ok physical
-const int Hall3 = 12; //ok physical
-const int Hall4 = A0; //ok physical
-const int Hall5 = 6; //ok physical
-const int Hall6 = 8; //ok physical
-const int Hall7 = 9; //ok physical
-const int Hall8 = A7;  //ok physical - NOT DETECTED
-const int Hall9 = 7; //ok physical
-const int Hall10 = 5;  //ok physical
-const int Hall11 = 4;  //ok physical
-const int Hall12 = A4;  //ok physical
-const int Hall13 = 0;   //ok physical
-const int Hall14 = 2;  //ok physical
-const int Hall15 = A1;  //ok physical
-const int Hall16 = A5;  //ok physical
+
+// definition des PIN pour les capteurs de Hall (détecteurs d'aimant)
+const int Hall1 = 11;
+const int Hall2 = 10;
+const int Hall3 = 12;
+const int Hall4 = A0;
+const int Hall5 = 8;
+const int Hall6 = 7;
+const int Hall7 = 2;
+const int Hall8 = A3;
+const int Hall9 = 6;
+const int Hall10 = 9;
+const int Hall11 = 5;
+const int Hall12 = A4;
+const int Hall13 = 3;
+const int Hall14 = 4;
+const int Hall15 = A1;
+const int Hall16 = A5;
 
 
-int total_puzzle;
+int total_puzzle; // nb pièces positionnées
 
+// statut de chaque capteur
 int H1;
 int H2;
 int H3;
@@ -35,11 +38,14 @@ int H14;
 int H15;
 int H16;
 
-
+bool puzzle_status = false; // le puzzle est complété ou pas
 
 
 void setup() {
+  // setup Serial
   Serial.begin(9600);
+
+  // setup all input PINS
   pinMode(Hall1, INPUT_PULLUP);
   pinMode(Hall2, INPUT_PULLUP);
   pinMode(Hall3, INPUT_PULLUP);
@@ -57,13 +63,14 @@ void setup() {
   pinMode(Hall15, INPUT_PULLUP);
   pinMode(Hall16, INPUT_PULLUP);
 
-  pinMode(A3, OUTPUT);
-  pinMode(A6, OUTPUT);
+  // Setup output for the lock relay
   pinMode(13, OUTPUT);
 }
 
+// the main loop of the program
 void loop() {
 
+  // read all sensors
   H1 = digitalRead(Hall1);
   H2 = digitalRead(Hall2);
   H3 = digitalRead(Hall3);
@@ -71,7 +78,7 @@ void loop() {
   H5 = digitalRead(Hall5);
   H6 = digitalRead(Hall6);
   H7 = digitalRead(Hall7);
-  H8 = 0;
+  H8 = digitalRead(Hall8);
   H9 = digitalRead(Hall9);
   H10 = digitalRead(Hall10);
   H11 = digitalRead(Hall11);
@@ -132,21 +139,41 @@ void loop() {
   Serial.print("H_16 = ");
   Serial.println(H16);
 
-  total_puzzle = (H1 + H2 + H3 + H4 + H5 + H6 + H7 + H8 + H9 + H10 + H11 + H12 + H13 + H14 + H15 + H16);
+  total_puzzle = (16 - (H1 + H2 + H3 + H4 + H5 + H6 + H7 + H8 + H9 + H10 + H11 + H12 + H13 + H14 + H15 + H16));
   Serial.print(" ");
-  Serial.print("total_puzzle =");
+  Serial.print("total_puzzle = ");
   Serial.println(total_puzzle );
 
-  if (total_puzzle <= 0) {
+
+  if (total_puzzle >= 16) {
     Serial.println("BRAVO");
-    digitalWrite(13, HIGH);
-    analogWrite(A3, 200);
+
+    if (!puzzle_status) { // Ouvre la porte seulement une fois lorsque le puzzle est fini
+
+      // Open the lock relay
+      digitalWrite(13, HIGH);
+
+      // wait 3 sec, not too long so that the lock does not heat
+      delay(3000);
+
+      // Close the lock relay
+      digitalWrite(13, LOW);
+
+      // sauvegarde l'état "fini" du puzzle
+      puzzle_status = true;
+
+    }
+
   } else {
     Serial.println("ENCORE UN EFFORT");
-    digitalWrite(13, LOW);
-    analogWrite(A3, 0);
-  }
 
+    // Let the relay closed
+    digitalWrite(13, LOW);
+
+    // sauvegarde l'état "pas fini" du puzzle
+    puzzle_status = false;
+
+  }
 
 
   Serial.println();
@@ -154,5 +181,7 @@ void loop() {
 
   Serial.println();
 
+  // wait 2 sec
   delay(2000);
+
 }
